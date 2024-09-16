@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>高靈敏度手機晃動檢測器</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background-color: #f0f0f0;
+            }
+            #status {
+                font-size: 24px;
+                text-align: center;
+                display: none;
+            }
+            #permission-button {
+                font-size: 18px;
+                padding: 10px 20px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="status">衝刺衝刺...</div>
+        <button id="permission-button">開始遊戲</button>
+        <script type="module">
+            import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+            const socket = io("");
+            let lastY = 0;
+            let shakeThreshold = 5;
+            let lastShakeTime = 0;
+            let shakeCooldown = 500;
+            let playerId = null;
+
+            function handleMotion(event) {
+                let y = event.accelerationIncludingGravity.y;
+                let currentTime = new Date().getTime();
+                if (
+                    Math.abs(y - lastY) > shakeThreshold &&
+                    currentTime - lastShakeTime > shakeCooldown
+                ) {
+                    document.getElementById("status").innerText = "跑啊！";
+                    lastShakeTime = currentTime;
+                    if (socket.connected) {
+                        socket.emit("run", (error) => {
+                            if (error) {
+                                console.error("發送失敗:", error);
+                            } else {
+                                console.log("成功發送 'run' 事件");
+                            }
+                        });
+                    } else {
+                        alert("WebSocket 未連接");
+                    }
+                    setTimeout(() => {
+                        document.getElementById("status").innerText =
+                            "衝刺衝刺...";
+                    }, 1000);
+                }
+                lastY = y;
+            }
+
+            function requestPermission() {
+                if (
+                    typeof DeviceOrientationEvent.requestPermission ===
+                    "function"
+                ) {
+                    DeviceOrientationEvent.requestPermission()
+                        .then((permissionState) => {
+                            if (permissionState === "granted") {
+                                startGame();
+                            } else {
+                                alert("尚未獲得權限");
+                            }
+                        })
+                        .catch(console.error);
+                } else {
+                    startGame();
+                }
+            }
+
+            function startGame() {
+                window.addEventListener("devicemotion", handleMotion);
+                document.getElementById("permission-button").style.display =
+                    "none";
+                document.getElementById("status").style.display = "block";
+            }
+
+            socket.on("connect", () => {
+                playerId = socket.id;
+                console.log("Connected with ID:", playerId);
+                document
+                    .getElementById("permission-button")
+                    .addEventListener("click", requestPermission);
+            });
+        </script>
+    </body>
+</html>

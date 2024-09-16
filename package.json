@@ -1,0 +1,21 @@
+{
+  "name": "runrunrun",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">20.11.0"
+  },
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5"
+  }
+}

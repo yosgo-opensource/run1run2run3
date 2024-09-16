@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>多人玩家運動展示</title>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                background-color: #f0f0f0;
+            }
+            #playground {
+                width: 100vw;
+                height: 100vh;
+                position: relative;
+            }
+            .player {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                position: absolute;
+                bottom: 0;
+                transition: bottom 0.5s linear;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="playground"></div>
+
+        <script type="module">
+            import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+
+            const socket = io("");
+            const playground = document.getElementById("playground");
+            const players = new Map();
+            const colors = [
+                "#ff0000",
+                "#00ff00",
+                "#0000ff",
+                "#ffff00",
+                "#ff00ff",
+                "#00ffff",
+            ];
+
+            socket.on("connect", () => {
+                console.log("Connected to WebSocket server");
+            });
+
+            socket.on("playerJoined", (player) => {
+                createPlayer(player.id);
+            });
+
+            socket.on("run", (playerId) => {
+                let player = players.get(playerId);
+                if (player) {
+                    movePlayer(player);
+                }
+            });
+
+            socket.on("playerLeft", (playerId) => {
+                removePlayer(playerId);
+            });
+
+            function createPlayer(playerId) {
+                const playerElement = document.createElement("div");
+                playerElement.className = "player";
+                playerElement.id = playerId;
+                playerElement.style.left = `${Math.random() * (playground.clientWidth - 20)}px`;
+                playerElement.style.backgroundColor =
+                    colors[players.size % colors.length];
+                playground.appendChild(playerElement);
+                players.set(playerId, playerElement);
+            }
+
+            function movePlayer(playerElement) {
+                let currentBottom = parseFloat(playerElement.style.bottom) || 0;
+                let newBottom = currentBottom + 50;
+                if (newBottom > playground.clientHeight) {
+                    newBottom = 0;
+                }
+                playerElement.style.bottom = `${newBottom}px`;
+            }
+
+            function removePlayer(playerId) {
+                const playerElement = players.get(playerId);
+                if (playerElement) {
+                    playground.removeChild(playerElement);
+                    players.delete(playerId);
+                }
+            }
+        </script>
+    </body>
+</html>
